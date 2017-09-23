@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/app.js",
+    "start": "tsc && node build/app.js",
     "test": "jest",
     "compile": "tsc",
     "prettier": "prettier --single-quote --trailing-comma es5 --write 'src/**/*.ts'"
@@ -15,14 +15,18 @@
   "dependencies": {
     "@types/bignumber.js": "^4.0.3",
     "@types/csvtojson": "^1.1.4",
+    "@types/date-fns": "^2.6.0",
     "@types/lodash": "^4.14.74",
+    "@types/node-schedule": "^1.2.0",
     "axios": "^0.16.2",
     "bignumber.js": "^4.0.4",
     "csv": "^1.1.1",
     "csvtojson": "^1.1.7",
+    "date-fns": "^1.28.5",
     "gdax-trading-toolkit": "^0.1.16",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
+    "node-schedule": "^1.2.5",
     "ramda": "^0.24.1",
     "uuid": "^3.1.0",
     "websocket": "^1.0.24"
