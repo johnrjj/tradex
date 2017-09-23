@@ -1,0 +1,52 @@
+{
+  "name": "tradex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node dist/app.js",
+    "test": "jest",
+    "compile": "tsc",
+    "prettier": "prettier --single-quote --trailing-comma es5 --write 'src/**/*.ts'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/bignumber.js": "^4.0.3",
+    "@types/csvtojson": "^1.1.4",
+    "@types/lodash": "^4.14.74",
+    "axios": "^0.16.2",
+    "bignumber.js": "^4.0.4",
+    "csv": "^1.1.1",
+    "csvtojson": "^1.1.7",
+    "gdax-trading-toolkit": "^0.1.16",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
+    "ramda": "^0.24.1",
+    "uuid": "^3.1.0",
+    "websocket": "^1.0.24"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/moment": "^2.13.0",
+    "@types/ramda": "^0.24.9",
+    "@types/uuid": "^3.4.2",
+    "prettier": "^1.6.1",
+    "ts-jest": "^21.0.0",
+    "typescript": "^2.5.2"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  }
+}
