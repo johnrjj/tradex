@@ -26,10 +26,14 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
 
   book.on('LiveOrderbook.trade', (trade: TradeMessage) => {
     // console.log(trade.time, trade.type);
-    historyBook.addTradeMessageToHistory(trade);
+    try {
+      historyBook.addTradeMessageToHistory(trade);
+    } catch (e) {
+      logger.log('error', `Error adding to history book`, e);
+    }
   });
 
-  book.on('LiveOrderbook.ticker', (ticker: Ticker) => {});
+  // book.on('LiveOrderbook.ticker', (ticker: Ticker) => {});
 
   book.on('LiveOrderbook.skippedMessage', (details: SkippedMessageEvent) => {
     // On GDAX, this event should never be emitted, but we put it here for completeness
@@ -47,4 +51,8 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
 
   // pipe it up
   feed.pipe(book);
+
+  feed.on('error', (err) => {
+    console.log('wahh', err);
+  })
 });
