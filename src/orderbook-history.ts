@@ -1,5 +1,3 @@
-// this.logger = config.logger;
-// this.product = config.product;
 import {
   startOfMinute,
   isSameMinute,
@@ -63,10 +61,6 @@ class OrderbookHistory {
   private printMap(value: any, key: any, map: Map<any, any>) {
     console.log(`m[${key}] = ${JSON.stringify(value)}`);
   }
-
-  // private hasCurrentMinute() {
-  //   return this.map.has(;
-  // }
 
   private log(level: string, message: string, meta?: any) {
     if (!this.logger) {
