@@ -52,7 +52,7 @@ GTT.Factories.GDAX.FeedFactory(logger, [product]).then((feed: GDAXFeed) => {
   // pipe it up
   feed.pipe(book);
 
-  feed.on('error', (err) => {
+  feed.on('error', err => {
     console.log('wahh', err);
-  })
+  });
 });

@@ -26,27 +26,40 @@ class OrderbookHistory {
   }
 
   public addTradeMessageToHistory(t: TradeMessage) {
-
     const tradeMessageStartOfMinute: Date = startOfMinute(t.time);
     const tradeMessageStartOfMinuteTimestamp: string = tradeMessageStartOfMinute.toISOString();
 
     if (this.isTradeMessageInCurrentWindow(t)) {
-      this.logger.log('debug', `Received trade message in current minute window [${this.currentMinute}]`);
+      this.logger.log(
+        'debug',
+        `Received trade message in current minute window [${this
+          .currentMinute}]`
+      );
       this.addTradeMessage(t);
     } else {
       // check if ahead or behind current minute
       if (isAfter(t.time, this.currentMinute)) {
         const minutesDiff = differenceInMinutes(t.time, this.currentMinute);
-        
-        this.logger.log('debug', `Received trade message for ${minutesDiff} minute(s) ahead of current minute window 
-          [Latest: ${tradeMessageStartOfMinute}], [CurMinuteWindowBeforeUpdate: ${this.currentMinute}]`);
-        
+
+        this.logger.log(
+          'debug',
+          `Received trade message for ${minutesDiff} minute(s) ahead of current minute window 
+          [Latest: ${tradeMessageStartOfMinute}], [CurMinuteWindowBeforeUpdate: ${this
+            .currentMinute}]`
+        );
+
         // close current candle...
         const oldCurrentMinute = this.currentMinute;
         const candleToClose = this.map.get(oldCurrentMinute.toISOString());
         closeCandle(candleToClose);
-        this.logger.log('debug', `Closed current candle @ ${oldCurrentMinute} @ ${candleToClose.close}`);
-        this.logger.log('debug', `Closed candle data: ${JSON.stringify(candleToClose)}`);
+        this.logger.log(
+          'debug',
+          `Closed current candle @ ${oldCurrentMinute} @ ${candleToClose.close}`
+        );
+        this.logger.log(
+          'debug',
+          `Closed candle data: ${JSON.stringify(candleToClose)}`
+        );
 
         // // now move the current minute up
         const newCurrentMinute = startOfMinute(t.time);
@@ -55,8 +68,11 @@ class OrderbookHistory {
         this.logger.log('debug', `Adding new candle for ${t.time}`);
         this.addTradeMessage(t);
       } else if (isBefore(t.time, this.currentMinute)) {
-        this.logger.log('info', `Received trade message for a previous minute window (${t.time.toISOString()})`);
-        // need logic here...
+        this.logger.log(
+          'error',
+          `Received trade message for a previous minute window (${t.time.toISOString()})`
+        );
+        throw Error('not yet implemented');
       } else {
         this.logger.log('error', 'Fell into a black hole...help');
       }
@@ -78,20 +94,16 @@ class OrderbookHistory {
     }
   }
 
-  private addTradeMessageToCurrentWindow() {
+  private addTradeMessageToCurrentWindow() {}
 
-  }
+  private addTradeMessageToPreviousWindow() {}
 
-  private addTradeMessageToPreviousWindow() {
-
-  }
-
-  private addTradeMessageToFutureWindow() {
-
-  }
+  private addTradeMessageToFutureWindow() {}
 
   private printMap() {
-    this.map.forEach((value, key) => console.log(`m[${key}] = ${JSON.stringify(value)}`));
+    this.map.forEach((value, key) =>
+      console.log(`m[${key}] = ${JSON.stringify(value)}`)
+    );
   }
 
   private doesCandleAlreadyExists(minuteTimestamp: string): boolean {
@@ -122,7 +134,7 @@ const createCandleFromTradeMessage = (t: TradeMessage): Candle => {
     volume: size,
   });
   return c;
-}
+};
 
 const updateByTradingMessage = (c: Candle, t: TradeMessage): Candle => {
   // We have a new open price, must have arrived out of order.
@@ -139,12 +151,12 @@ const updateByTradingMessage = (c: Candle, t: TradeMessage): Candle => {
   c.low = min([+c.high, +t.price]).toString();
   c.volume = sum([+c.volume, +t.size]).toString();
   return c;
-}
+};
 
 const closeCandle = (c: Candle): Candle => {
   c.close = c.current;
   c.closeTimestamp = c.latestTimestampSoFar;
   return c;
-}
+};
 
 export { OrderbookHistory };

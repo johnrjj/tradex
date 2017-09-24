@@ -28,14 +28,23 @@ class Candle implements ICandle {
   volume: string;
   current: string;
 
-  open: string;  
+  open: string;
   openTimestamp: Date;
   latestTimestampSoFar: Date = null;
-  
+
   closeTimestamp: Date = null;
   confirmed: boolean;
 
-  constructor({ open, close, high, low, volume, current, timestamp, confirmed }: ICandle) {
+  constructor({
+    open,
+    close,
+    high,
+    low,
+    volume,
+    current,
+    timestamp,
+    confirmed,
+  }: ICandle) {
     this.timestamp = startOfMinute(timestamp);
     this.latestTimestampSoFar = timestamp;
     this.openTimestamp = timestamp;
