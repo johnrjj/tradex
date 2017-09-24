@@ -1,7 +1,13 @@
 // this.logger = config.logger;
 // this.product = config.product;
-import { startOfMinute, isSameMinute } from 'date-fns';
-import { TradeMessage } from "gdax-trading-toolkit/build/src/core";
+import {
+  startOfMinute,
+  isSameMinute,
+  isAfter,
+  isBefore,
+  differenceInMinutes,
+} from 'date-fns';
+import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { max, min, sum } from 'lodash';
 import { Candle } from './types';
@@ -14,14 +20,13 @@ class OrderbookHistory {
   private readonly currentMinute: Date;
   private map = new Map<string, Candle>();
 
-  constructor({ logger, product } : { logger?: Logger, product: string}) {
+  constructor({ logger, product }: { logger?: Logger; product: string }) {
     this.logger = logger;
     this.product = product;
     [this.baseCurrency, this.quoteCurrency] = this.product.split('-');
     this.currentMinute = startOfMinute(new Date());
   }
 
-  
   public addTradeMessageToHistory(t: TradeMessage) {
     if (isSameMinute(t.time, this.currentMinute)) {
       this.logger.log('debug', 'same minute');
@@ -38,42 +43,38 @@ class OrderbookHistory {
         // create it it
         const newCandle = createCandleFromTradeMessage(t);
         this.map.set(timestamp, newCandle);
-        
       }
     } else {
       // check if ahead or behind current minute
-
-      // if ahead...
-      // lets move up the ticker...
-
-      // else behind...
-      // need to do some back dating stuff
-
+      if (isAfter(t.time, this.currentMinute)) {
+        console.log('is after');
+        const minutesDiff = differenceInMinutes(t.time, this.currentMinute);
+        console.log(minutesDiff);
+      } else if (isBefore(t.time, this.currentMinute)) {
+        console.log('is before');
+      } else {
+        this.logger.log('error', 'this should never happen');
+      }
       this.logger.log('debug', 'different minute');
     }
-
     this.map.forEach(this.printMap);
-    
   }
 
   private printMap(value: any, key: any, map: Map<any, any>) {
     console.log(`m[${key}] = ${JSON.stringify(value)}`);
   }
 
-
   // private hasCurrentMinute() {
   //   return this.map.has(;
   // }
 
-
   private log(level: string, message: string, meta?: any) {
     if (!this.logger) {
-        return;
+      return;
     }
     this.logger.log(level, message, meta);
   }
 }
-
 
 const createCandleFromTradeMessage = (t: TradeMessage) => {
   const timestamp = startOfMinute(t.time).toISOString();
@@ -93,9 +94,16 @@ const createCandleFromTradeMessage = (t: TradeMessage) => {
     volume,
   });
   return candle;
-}
+};
 
-const createCandle = ({ timestamp, open, close, high, low, volume }: Candle) => {
+const createCandle = ({
+  timestamp,
+  open,
+  close,
+  high,
+  low,
+  volume,
+}: Candle) => {
   const candle: Candle = {
     timestamp,
     open,
@@ -103,10 +111,10 @@ const createCandle = ({ timestamp, open, close, high, low, volume }: Candle) => 
     high,
     low,
     volume,
-  }
+  };
   return candle;
-}
-  
+};
+
 const updateCandleFromTradeMessage = (previous: Candle, t: TradeMessage) => {
   const x = Object.assign({}, previous);
   x.close = min([+x.close, +t.price]).toString();
@@ -117,8 +125,4 @@ const updateCandleFromTradeMessage = (previous: Candle, t: TradeMessage) => {
   return x;
 };
 
-
-
-export { 
-  OrderbookHistory,
-}
+export { OrderbookHistory };

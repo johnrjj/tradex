@@ -7,6 +7,4 @@ interface Candle {
   volume: string;
 }
 
-export {
-  Candle,
-}
+export { Candle };
