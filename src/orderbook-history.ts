@@ -8,15 +8,15 @@ import {
 import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { max, min, sum } from 'lodash';
-import { Candle } from './types';
+import { ICandle } from './candle';
 
 class OrderbookHistory {
   private readonly logger: Logger;
   private readonly product: string;
   private readonly baseCurrency: string;
   private readonly quoteCurrency: string;
-  private readonly currentMinute: Date;
-  private map = new Map<string, Candle>();
+  private currentMinute: Date;
+  private map = new Map<string, ICandle>();
 
   constructor({ logger, product }: { logger?: Logger; product: string }) {
     this.logger = logger;
@@ -31,10 +31,8 @@ class OrderbookHistory {
       const timestamp = startOfMinute(t.time.toISOString()).toISOString();
 
       if (this.map.has(timestamp)) {
-        console.log('has it');
         const previousCandle = this.map.get(timestamp);
         const newCandleState = updateCandleFromTradeMessage(previousCandle, t);
-        console.log(newCandleState);
         this.map.set(timestamp, newCandleState);
         // update it.
       } else {
@@ -43,13 +41,27 @@ class OrderbookHistory {
         this.map.set(timestamp, newCandle);
       }
     } else {
+      this.logger.log('debug', 'different minute');
       // check if ahead or behind current minute
       if (isAfter(t.time, this.currentMinute)) {
-        console.log('is after');
+
         const minutesDiff = differenceInMinutes(t.time, this.currentMinute);
-        console.log(minutesDiff);
+
+        const newCurrentMinute = startOfMinute(t.time);
+        this.currentMinute = newCurrentMinute;
+
+        // check if candle already exists, if not add it
+        // if it exists, update it.
+
+        // if already exists... (todo)
+
+        // if doesn't exist...
+        const newCandle = createCandleFromTradeMessage(t);
+        this.map.set(newCurrentMinute.toISOString(), newCandle);
+
+
       } else if (isBefore(t.time, this.currentMinute)) {
-        console.log('is before');
+        this.logger.log('error', 'had backflow thing :(');
       } else {
         this.logger.log('error', 'this should never happen');
       }
@@ -69,54 +81,5 @@ class OrderbookHistory {
     this.logger.log(level, message, meta);
   }
 }
-
-const createCandleFromTradeMessage = (t: TradeMessage) => {
-  const timestamp = startOfMinute(t.time).toISOString();
-  console.log(`price: ${t.price}`);
-  const open = t.price;
-  const close = t.price;
-  const high = t.price;
-  const low = t.price;
-  const volume = t.size;
-
-  const candle = createCandle({
-    timestamp,
-    open,
-    close,
-    high,
-    low,
-    volume,
-  });
-  return candle;
-};
-
-const createCandle = ({
-  timestamp,
-  open,
-  close,
-  high,
-  low,
-  volume,
-}: Candle) => {
-  const candle: Candle = {
-    timestamp,
-    open,
-    close,
-    high,
-    low,
-    volume,
-  };
-  return candle;
-};
-
-const updateCandleFromTradeMessage = (previous: Candle, t: TradeMessage) => {
-  const x = Object.assign({}, previous);
-  x.close = min([+x.close, +t.price]).toString();
-  x.low = min([+x.close, +t.price]).toString();
-  x.open = max([+x.close, +t.price]).toString();
-  x.high = max([+x.close, +t.price]).toString();
-  x.volume = sum([+x.volume, +t.size]).toString();
-  return x;
-};
 
 export { OrderbookHistory };

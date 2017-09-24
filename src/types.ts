@@ -5,6 +5,8 @@ interface Candle {
   high: string;
   low: string;
   volume: string;
+  openTradeTimestamp?: string;
+  closingTradeTimestamp?: string;
 }
 
 export { Candle };
