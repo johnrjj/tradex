@@ -19,20 +19,18 @@ interface FullFeed {
 }
 
 class Coordinator {
-  candleMetadata: WeakMap<Candle, any>;
-  algorithms: Array<any>;
-  book: LiveOrderbook;
-  historyBook: OrderbookHistory;
-  feedRef: ExchangeFeed;
+  candleMetadata: WeakMap<Candle, any> = new WeakMap();
+  readonly algorithms: Array<any>;
+  readonly book: LiveOrderbook;
+  readonly historyBook: OrderbookHistory;
+  readonly feedRef: ExchangeFeed;
 
   constructor({ book, feed, historyBook }: FullFeed) {
     this.book = book;
     this.feedRef = feed;
     this.historyBook = historyBook;
-    this.historyBook.on('run', (c: Candle) => {
+    this.historyBook.on('OrderbookHistory.update', (c: Candle) => {
       const meta = this.candleMetadata.get(c);
-      console.log('metadata', meta);
-      // rerun algorithms
     });
   }
 }

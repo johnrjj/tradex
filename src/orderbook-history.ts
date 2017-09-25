@@ -32,7 +32,7 @@ class OrderbookHistory extends Duplex {
       this.addTradeMessage(t);
     } else {
       // check if ahead or behind current minute
-      if (isAfter(t.time, this.currentMinute)) {
+      if (isAfter(startOfMinute(t.time), this.currentMinute)) {
         const minutesDiff = differenceInMinutes(t.time, this.currentMinute);
 
         this.logger.log(
@@ -43,8 +43,8 @@ class OrderbookHistory extends Duplex {
         );
 
         // close current candle...
-        const oldCurrentMinute = this.currentMinute;
-        const candleToClose = this.map.get(oldCurrentMinute.getDate());
+        const oldCurrentMinute = this.currentMinute.getTime();
+        const candleToClose = this.map.get(oldCurrentMinute);
         closeCandle(candleToClose);
         this.logger.log(
           'debug',
@@ -73,7 +73,7 @@ class OrderbookHistory extends Duplex {
 
   private addTradeMessage(t: TradeMessage) {
     const tradeMessageStartOfMinute: Date = startOfMinute(t.time);
-    const tradeMessageStartOfMinuteTimestamp: number = tradeMessageStartOfMinute.getDate();
+    const tradeMessageStartOfMinuteTimestamp: number = tradeMessageStartOfMinute.getTime();
 
     if (this.doesCandleAlreadyExists(tradeMessageStartOfMinuteTimestamp)) {
       const previousCandle = this.map.get(tradeMessageStartOfMinuteTimestamp);
@@ -113,6 +113,10 @@ class OrderbookHistory extends Duplex {
     /* no-op */
   }
 
+  private getCandleFromTradeMessage(t: TradeMessage) {
+    return this.map.get(startOfMinute(t.time).getTime());
+  }
+
   protected _write(msg: any, encoding: string, callback: () => void): void {
     // Pass the msg on to downstream users
     this.push(msg);
@@ -122,7 +126,7 @@ class OrderbookHistory extends Duplex {
     switch (msg && msg.type) {
       case 'trade':
         this.addTradeMessageToHistory(msg);
-        this.emit('OrderbookHistory.trade', msg);
+        this.emit('OrderbookHistory.update', this.getCandleFromTradeMessage(msg as TradeMessage)); //this.getCandleFromTradeMessage(msg as TradeMessage)
         break;
       default:
         break;
