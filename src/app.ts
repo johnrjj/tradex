@@ -27,29 +27,13 @@ const startStreams = (logger: Logger, products: Array<string>) =>
       const book = new LiveOrderbook(config);
       const historyBook = new OrderbookHistory(config);
 
-      // book.on('LiveOrderbook.trade', (trade: TradeMessage) => {});
-      // book.on('LiveOrderbook.ticker', (ticker: Ticker) => {});
-
-      book.on('LiveOrderbook.skippedMessage', (details: SkippedMessageEvent) => {
-        // On GDAX, this event should never be emitted, but we put it here for completeness
-        console.log('SKIPPED MESSAGE', details);
-        console.log('Reconnecting to feed');
-        feed.reconnect(0);
-      });
-      book.on('end', () => {
-        console.log('Orderbook closed');
-      });
-      book.on('error', err => {
-        console.log('Livebook errored: ', err);
-        feed.pipe(book);
+      feed.on('error', err => {
+        console.log('feed error, gonna try again to reconnect', err);
+        feed.reconnect(1);
       });
 
       feed.pipe(book);
       feed.pipe(historyBook);
-
-      feed.on('error', err => {
-        console.log('wahh', err);
-      });
 
       return {
         feed,
