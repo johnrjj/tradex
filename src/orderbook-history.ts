@@ -8,7 +8,7 @@ import {
 } from 'date-fns';
 import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
-import { max, min, sum, range } from 'lodash';
+import { max, min, sum, rangeRight } from 'lodash';
 import { Duplex } from 'stream';
 import { ICandle, Candle } from './candle';
 
@@ -182,11 +182,14 @@ const closeCandle = (c: Candle): Candle => {
   return c;
 };
 
-const getNPreviousCandles = (c: Candle): Array<Candle> => {
-  const candles = range(14).map(n => {
-    return c.parent.getCandle(subMinutes(c.timestamp, n).getTime());
-  });
+const getNPreviousCandles = (
+  c: Candle,
+  n: number = 14,
+  inclusive: boolean = true
+): Array<Candle> => {
+  const range = inclusive ? rangeRight(0, n) : rangeRight(1, n + 1);
+  const candles = range.map(n => c.parent.getCandle(subMinutes(c.timestamp, n).getTime()));
   return candles;
 };
 
-export { OrderbookHistory };
+export { OrderbookHistory, getNPreviousCandles };

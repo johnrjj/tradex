@@ -9,7 +9,7 @@ import {
 } from 'gdax-trading-toolkit/build/src/core';
 import { Ticker } from 'gdax-trading-toolkit/build/src/exchanges/PublicExchangeAPI';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
-import { OrderbookHistory } from './orderbook-history';
+import { OrderbookHistory, getNPreviousCandles } from './orderbook-history';
 import { Candle } from './candle';
 
 interface FullFeed {
@@ -31,6 +31,7 @@ class Coordinator {
     this.historyBook = historyBook;
     this.historyBook.on('OrderbookHistory.update', (c: Candle) => {
       const meta = this.candleMetadata.get(c);
+      const candles: Array<Candle> = getNPreviousCandles(c);
     });
   }
 }
