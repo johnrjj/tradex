@@ -23,7 +23,6 @@ class OrderbookHistory extends Duplex {
 
   public addTradeMessageToHistory(t: TradeMessage) {
     const tradeMessageStartOfMinute: Date = startOfMinute(t.time);
-
     if (this.isTradeMessageInCurrentWindow(t)) {
       this.logger.log(
         'debug',
@@ -83,12 +82,6 @@ class OrderbookHistory extends Duplex {
       this.map.set(tradeMessageStartOfMinuteTimestamp, candle);
     }
   }
-
-  // private addTradeMessageToCurrentWindow() {}
-
-  // private addTradeMessageToPreviousWindow() {}
-
-  // private addTradeMessageToFutureWindow() {}
 
   private printMap() {
     this.map.forEach((value, key) => console.log(`m[${key}] = ${JSON.stringify(value)}`));
