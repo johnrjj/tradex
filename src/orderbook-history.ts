@@ -1,7 +1,7 @@
-import { startOfMinute, isSameMinute, isAfter, isBefore, differenceInMinutes } from 'date-fns';
+import { startOfMinute, isSameMinute, isAfter, isBefore, differenceInMinutes, subMinutes } from 'date-fns';
 import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
-import { max, min, sum } from 'lodash';
+import { max, min, sum, range } from 'lodash';
 import { Duplex } from 'stream';
 import { ICandle, Candle } from './candle';
 
@@ -34,28 +34,35 @@ class OrderbookHistory extends Duplex {
       if (isAfter(startOfMinute(t.time), this.currentMinute)) {
         const minutesDiff = differenceInMinutes(t.time, this.currentMinute);
 
+        if (minutesDiff > 1) {
+          this.logger.log('error', 'jump in history by more than a minute');
+          throw new Error('not yet implemnented');
+        }
+
         this.logger.log(
           'debug',
-          `Received trade message for ${minutesDiff} minute(s) ahead of current minute window 
-          [Latest: ${tradeMessageStartOfMinute}], [CurMinuteWindowBeforeUpdate: ${this
-            .currentMinute}]`
+          `Received trade message for ${minutesDiff} minute(s) ahead of current minute window [Latest: ${tradeMessageStartOfMinute}], [CurMinuteWindowBeforeUpdate: ${this.currentMinute}]`
         );
 
         // close current candle...
         const oldCurrentMinute = this.currentMinute.getTime();
         const candleToClose = this.map.get(oldCurrentMinute);
+
+        if (!candleToClose) {
+          this.logger.log('error', 'no previous candle to close, should never have a hole');
+          throw new Error('fix this');
+        }
+        
         closeCandle(candleToClose);
         this.logger.log(
           'debug',
-          `Closed current candle @ ${oldCurrentMinute} @ ${candleToClose.close}`
+          `Closed current candle @ [${new Date(oldCurrentMinute)}]`
         );
-        this.logger.log('debug', `Closed candle data: ${JSON.stringify(candleToClose)}`);
-
-        // // now move the current minute up
+        // now move the current minute up
         const newCurrentMinute = startOfMinute(t.time);
         this.currentMinute = newCurrentMinute;
-        this.logger.log('debug', `Moved current window up to ${t.time}`);
-        this.logger.log('debug', `Adding new candle for ${t.time}`);
+        this.logger.log('debug', `Moved current window up to [${t.time}]`);
+        this.logger.log('debug', `Adding new candle for [${t.time}]`);
         this.addTradeMessage(t);
       } else if (isBefore(t.time, this.currentMinute)) {
         this.logger.log(
@@ -70,6 +77,10 @@ class OrderbookHistory extends Duplex {
     // this.printMap();
   }
 
+  public getCandle(timeValueInMilliseconds: number) {
+    return this.map.get(timeValueInMilliseconds);
+  }
+
   private addTradeMessage(t: TradeMessage) {
     const tradeMessageStartOfMinute: Date = startOfMinute(t.time);
     const tradeMessageStartOfMinuteTimestamp: number = tradeMessageStartOfMinute.getTime();
@@ -78,7 +89,7 @@ class OrderbookHistory extends Duplex {
       const previousCandle = this.map.get(tradeMessageStartOfMinuteTimestamp);
       updateByTradingMessage(previousCandle, t);
     } else {
-      const candle = createCandleFromTradeMessage(t);
+      const candle = createCandleFromTradeMessage(t, this);
       this.map.set(tradeMessageStartOfMinuteTimestamp, candle);
     }
   }
@@ -128,7 +139,7 @@ class OrderbookHistory extends Duplex {
   }
 }
 
-const createCandleFromTradeMessage = (t: TradeMessage): Candle => {
+const createCandleFromTradeMessage = (t: TradeMessage, ctx: OrderbookHistory): Candle => {
   const { price, size, time } = t;
   const miniuteFloored = startOfMinute(t.time);
   const c = new Candle({
@@ -138,6 +149,7 @@ const createCandleFromTradeMessage = (t: TradeMessage): Candle => {
     low: price,
     timestamp: time,
     volume: size,
+    parent: ctx,
   });
   return c;
 };
@@ -164,5 +176,12 @@ const closeCandle = (c: Candle): Candle => {
   c.closeTimestamp = c.latestTimestampSoFar;
   return c;
 };
+
+const getNPreviousCandles = (c: Candle): Array<Candle> => {
+  const candles = range(14).map(n => {
+    return c.parent.getCandle(subMinutes(c.timestamp, n).getTime());
+  });
+  return candles;
+}
 
 export { OrderbookHistory };
