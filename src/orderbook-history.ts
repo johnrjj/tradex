@@ -1,4 +1,11 @@
-import { startOfMinute, isSameMinute, isAfter, isBefore, differenceInMinutes, subMinutes } from 'date-fns';
+import {
+  startOfMinute,
+  isSameMinute,
+  isAfter,
+  isBefore,
+  differenceInMinutes,
+  subMinutes,
+} from 'date-fns';
 import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { max, min, sum, range } from 'lodash';
@@ -41,7 +48,8 @@ class OrderbookHistory extends Duplex {
 
         this.logger.log(
           'debug',
-          `Received trade message for ${minutesDiff} minute(s) ahead of current minute window [Latest: ${tradeMessageStartOfMinute}], [CurMinuteWindowBeforeUpdate: ${this.currentMinute}]`
+          `Received trade message for ${minutesDiff} minute(s) ahead of current minute window [Latest: ${tradeMessageStartOfMinute}], [CurMinuteWindowBeforeUpdate: ${this
+            .currentMinute}]`
         );
 
         // close current candle...
@@ -52,12 +60,9 @@ class OrderbookHistory extends Duplex {
           this.logger.log('error', 'no previous candle to close, should never have a hole');
           throw new Error('fix this');
         }
-        
+
         closeCandle(candleToClose);
-        this.logger.log(
-          'debug',
-          `Closed current candle @ [${new Date(oldCurrentMinute)}]`
-        );
+        this.logger.log('debug', `Closed current candle @ [${new Date(oldCurrentMinute)}]`);
         // now move the current minute up
         const newCurrentMinute = startOfMinute(t.time);
         this.currentMinute = newCurrentMinute;
@@ -182,6 +187,6 @@ const getNPreviousCandles = (c: Candle): Array<Candle> => {
     return c.parent.getCandle(subMinutes(c.timestamp, n).getTime());
   });
   return candles;
-}
+};
 
 export { OrderbookHistory };
