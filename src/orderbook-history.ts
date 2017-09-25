@@ -1,24 +1,20 @@
-import {
-  startOfMinute,
-  isSameMinute,
-  isAfter,
-  isBefore,
-  differenceInMinutes,
-} from 'date-fns';
+import { startOfMinute, isSameMinute, isAfter, isBefore, differenceInMinutes } from 'date-fns';
 import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { max, min, sum } from 'lodash';
+import { Duplex } from 'stream';
 import { ICandle, Candle } from './candle';
 
-class OrderbookHistory {
+class OrderbookHistory extends Duplex {
   private readonly logger: Logger;
   private readonly product: string;
   private readonly baseCurrency: string;
   private readonly quoteCurrency: string;
   private currentMinute: Date;
-  private map = new Map<string, Candle>();
+  private map = new Map<number, Candle>();
 
   constructor({ logger, product }: { logger?: Logger; product: string }) {
+    super({ objectMode: true, highWaterMark: 1024 });
     this.logger = logger;
     this.product = product;
     [this.baseCurrency, this.quoteCurrency] = this.product.split('-');
@@ -27,13 +23,11 @@ class OrderbookHistory {
 
   public addTradeMessageToHistory(t: TradeMessage) {
     const tradeMessageStartOfMinute: Date = startOfMinute(t.time);
-    const tradeMessageStartOfMinuteTimestamp: string = tradeMessageStartOfMinute.toISOString();
 
     if (this.isTradeMessageInCurrentWindow(t)) {
       this.logger.log(
         'debug',
-        `Received trade message in current minute window [${this
-          .currentMinute}]`
+        `Received trade message in current minute window [${this.currentMinute}]`
       );
       this.addTradeMessage(t);
     } else {
@@ -50,16 +44,13 @@ class OrderbookHistory {
 
         // close current candle...
         const oldCurrentMinute = this.currentMinute;
-        const candleToClose = this.map.get(oldCurrentMinute.toISOString());
+        const candleToClose = this.map.get(oldCurrentMinute.getDate());
         closeCandle(candleToClose);
         this.logger.log(
           'debug',
           `Closed current candle @ ${oldCurrentMinute} @ ${candleToClose.close}`
         );
-        this.logger.log(
-          'debug',
-          `Closed candle data: ${JSON.stringify(candleToClose)}`
-        );
+        this.logger.log('debug', `Closed candle data: ${JSON.stringify(candleToClose)}`);
 
         // // now move the current minute up
         const newCurrentMinute = startOfMinute(t.time);
@@ -77,13 +68,12 @@ class OrderbookHistory {
         this.logger.log('error', 'Fell into a black hole...help');
       }
     }
-
     // this.printMap();
   }
 
   private addTradeMessage(t: TradeMessage) {
     const tradeMessageStartOfMinute: Date = startOfMinute(t.time);
-    const tradeMessageStartOfMinuteTimestamp: string = tradeMessageStartOfMinute.toISOString();
+    const tradeMessageStartOfMinuteTimestamp: number = tradeMessageStartOfMinute.getDate();
 
     if (this.doesCandleAlreadyExists(tradeMessageStartOfMinuteTimestamp)) {
       const previousCandle = this.map.get(tradeMessageStartOfMinuteTimestamp);
@@ -94,20 +84,18 @@ class OrderbookHistory {
     }
   }
 
-  private addTradeMessageToCurrentWindow() {}
+  // private addTradeMessageToCurrentWindow() {}
 
-  private addTradeMessageToPreviousWindow() {}
+  // private addTradeMessageToPreviousWindow() {}
 
-  private addTradeMessageToFutureWindow() {}
+  // private addTradeMessageToFutureWindow() {}
 
   private printMap() {
-    this.map.forEach((value, key) =>
-      console.log(`m[${key}] = ${JSON.stringify(value)}`)
-    );
+    this.map.forEach((value, key) => console.log(`m[${key}] = ${JSON.stringify(value)}`));
   }
 
-  private doesCandleAlreadyExists(minuteTimestamp: string): boolean {
-    return this.map.has(minuteTimestamp);
+  private doesCandleAlreadyExists(timestamp: number): boolean {
+    return this.map.has(timestamp);
   }
 
   private isTradeMessageInCurrentWindow(t: TradeMessage): boolean {
@@ -119,6 +107,27 @@ class OrderbookHistory {
       return;
     }
     this.logger.log(level, message, meta);
+  }
+
+  protected _read() {
+    /* no-op */
+  }
+
+  protected _write(msg: any, encoding: string, callback: () => void): void {
+    // Pass the msg on to downstream users
+    this.push(msg);
+    if (!msg.productId || msg.productId !== this.product) {
+      return callback();
+    }
+    switch (msg && msg.type) {
+      case 'trade':
+        this.addTradeMessageToHistory(msg);
+        this.emit('OrderbookHistory.trade', msg);
+        break;
+      default:
+        break;
+    }
+    callback();
   }
 }
 

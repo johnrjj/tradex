@@ -14,16 +14,9 @@
 
 import * as GTT from 'gdax-trading-toolkit';
 import { Big } from 'gdax-trading-toolkit/build/src/lib/types';
-import {
-  GDAX_WS_FEED,
-  GDAXFeed,
-  GDAXFeedConfig,
-} from 'gdax-trading-toolkit/build/src/exchanges';
+import { GDAX_WS_FEED, GDAXFeed, GDAXFeedConfig } from 'gdax-trading-toolkit/build/src/exchanges';
 import { GDAX_API_URL } from 'gdax-trading-toolkit/build/src/exchanges/gdax/GDAXExchangeAPI';
-import {
-  PlaceOrderMessage,
-  TickerMessage,
-} from 'gdax-trading-toolkit/build/src/core';
+import { PlaceOrderMessage, TickerMessage } from 'gdax-trading-toolkit/build/src/core';
 import { LiveOrder } from 'gdax-trading-toolkit/build/src/lib';
 
 const logger = GTT.utils.ConsoleLoggerFactory();
@@ -46,38 +39,32 @@ const options: GDAXFeedConfig = {
   apiUrl: GDAX_API_URL,
 };
 
-GTT.Factories.GDAX
-  .getSubscribedFeeds(options, [product])
-  .then((feed: GDAXFeed) => {
+GTT.Factories.GDAX.getSubscribedFeeds(options, [product]).then((feed: GDAXFeed) => {
+  GTT.Core.createTickerTrigger(feed, product).setAction((ticker: TickerMessage) => {
+    const currentPrice = ticker.price;
     GTT.Core
-      .createTickerTrigger(feed, product)
-      .setAction((ticker: TickerMessage) => {
-        const currentPrice = ticker.price;
-        GTT.Core
-          .createPriceTrigger(feed, product, currentPrice.minus(spread))
-          .setAction((event: TickerMessage) => {
-            pushMessage(
-              'Price Trigger',
-              `${base} price has fallen and is now ${event.price} ${quote} on ${product} on GDAX`
-            );
-            submitTrade('buy', '0.01');
-          });
-        GTT.Core
-          .createPriceTrigger(feed, product, currentPrice.plus(spread))
-          .setAction((event: TickerMessage) => {
-            pushMessage(
-              'Price Trigger',
-              `${base} price has risen and is now ${event.price} ${quote} on ${product} on GDAX`
-            );
-            submitTrade('sell', '0.01');
-          });
+      .createPriceTrigger(feed, product, currentPrice.minus(spread))
+      .setAction((event: TickerMessage) => {
+        pushMessage(
+          'Price Trigger',
+          `${base} price has fallen and is now ${event.price} ${quote} on ${product} on GDAX`
+        );
+        submitTrade('buy', '0.01');
       });
     GTT.Core
-      .createTickerTrigger(feed, product, false)
-      .setAction((ticker: TickerMessage) => {
-        console.log(GTT.utils.printTicker(ticker, 3));
+      .createPriceTrigger(feed, product, currentPrice.plus(spread))
+      .setAction((event: TickerMessage) => {
+        pushMessage(
+          'Price Trigger',
+          `${base} price has risen and is now ${event.price} ${quote} on ${product} on GDAX`
+        );
+        submitTrade('sell', '0.01');
       });
   });
+  GTT.Core.createTickerTrigger(feed, product, false).setAction((ticker: TickerMessage) => {
+    console.log(GTT.utils.printTicker(ticker, 3));
+  });
+});
 
 function submitTrade(side: string, amount: string) {
   const order: PlaceOrderMessage = {

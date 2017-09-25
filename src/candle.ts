@@ -1,10 +1,4 @@
-import {
-  startOfMinute,
-  isSameMinute,
-  isAfter,
-  isBefore,
-  differenceInMinutes,
-} from 'date-fns';
+import { startOfMinute, isSameMinute, isAfter, isBefore, differenceInMinutes } from 'date-fns';
 import { TradeMessage } from 'gdax-trading-toolkit/build/src/core';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { max, min, sum } from 'lodash';
@@ -17,10 +11,16 @@ interface ICandle {
   low?: string;
   volume?: string;
   current?: string;
+}
+
+interface ICandleMetadata {
+  openTimestamp?: Date;
+  latestTimestampSoFar?: Date;
+  closeTimestamp?: Date;
   confirmed?: boolean;
 }
 
-class Candle implements ICandle {
+class Candle implements ICandle, ICandleMetadata {
   timestamp: Date;
   close: string;
   high: string;
@@ -30,9 +30,8 @@ class Candle implements ICandle {
 
   open: string;
   openTimestamp: Date;
-  latestTimestampSoFar: Date = null;
-
-  closeTimestamp: Date = null;
+  latestTimestampSoFar: Date;
+  closeTimestamp: Date;
   confirmed: boolean;
 
   constructor({
@@ -44,7 +43,7 @@ class Candle implements ICandle {
     current,
     timestamp,
     confirmed,
-  }: ICandle) {
+  }: ICandle & ICandleMetadata) {
     this.timestamp = startOfMinute(timestamp);
     this.latestTimestampSoFar = timestamp;
     this.openTimestamp = timestamp;
@@ -58,4 +57,4 @@ class Candle implements ICandle {
   }
 }
 
-export { ICandle, Candle };
+export { ICandle, ICandleMetadata, Candle };

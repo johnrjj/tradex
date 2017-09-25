@@ -7,7 +7,7 @@
     "start": "tsc && node build/app.js",
     "test": "jest",
     "compile": "tsc",
-    "prettier": "prettier --single-quote --trailing-comma es5 --write 'src/**/*.ts'"
+    "prettier": "prettier --print-width 100 --single-quote --trailing-comma es5 --write 'src/**/*.ts'"
   },
   "keywords": [],
   "author": "",
