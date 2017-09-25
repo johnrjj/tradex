@@ -1,5 +1,5 @@
-import { isSameMinute, startOfMinute } from 'date-fns';
 import * as GTT from 'gdax-trading-toolkit';
+import { isSameMinute, startOfMinute } from 'date-fns';
 import { GDAXFeed, ExchangeFeed } from 'gdax-trading-toolkit/build/src/exchanges';
 import {
   LiveBookConfig,
@@ -19,16 +19,15 @@ const logger = GTT.utils.ConsoleLoggerFactory({ level: 'debug' });
 const startStreams = (logger: Logger, products: Array<string>) =>
   GTT.Factories.GDAX.FeedFactory(logger, products).then((feed: GDAXFeed): Array<FullFeed> => {
     const feeds: Array<FullFeed> = products.map(product => {
-      // Configure the live book object
       const config: LiveBookConfig = {
-        product: product,
-        logger: logger,
+        product,
+        logger,
       };
       const book = new LiveOrderbook(config);
       const historyBook = new OrderbookHistory(config);
 
       feed.on('error', err => {
-        console.log('feed error, gonna try again to reconnect', err);
+        logger.log('error', 'feed error, gonna try again to reconnect', err);
         feed.reconnect(1);
       });
 

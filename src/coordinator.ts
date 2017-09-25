@@ -11,6 +11,7 @@ import { Ticker } from 'gdax-trading-toolkit/build/src/exchanges/PublicExchangeA
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { OrderbookHistory, getNPreviousCandles } from './orderbook-history';
 import { Candle } from './candle';
+import { Big, big, BigJS, Biglike, ONE, ZERO } from './types';
 
 interface FullFeed {
   book: LiveOrderbook;
@@ -18,9 +19,15 @@ interface FullFeed {
   feed: ExchangeFeed;
 }
 
+interface AlgorithmCache {
+  avgGain: BigJS;
+  avgLoss: BigJS;
+  rsi: BigJS;
+}
+
 class Coordinator {
-  candleMetadata: WeakMap<Candle, any> = new WeakMap();
-  readonly algorithms: Array<any>;
+  candleMetadata: WeakMap<Candle, AlgorithmCache> = new WeakMap();
+  readonly algorithms: AlgorithmCache;
   readonly book: LiveOrderbook;
   readonly historyBook: OrderbookHistory;
   readonly feedRef: ExchangeFeed;
@@ -32,8 +39,10 @@ class Coordinator {
     this.historyBook.on('OrderbookHistory.update', (c: Candle) => {
       const meta = this.candleMetadata.get(c);
       const candles: Array<Candle> = getNPreviousCandles(c);
+      const foo = Big(candles[candles.length - 1] && candles[candles.length - 1].current);
+      console.log(foo);
     });
   }
 }
 
-export { FullFeed, Coordinator };
+export { FullFeed, AlgorithmCache, Coordinator };
