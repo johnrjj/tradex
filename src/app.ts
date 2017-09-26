@@ -44,5 +44,5 @@ const startStreams = (logger: Logger, products: Array<string>) =>
   });
 
 startStreams(logger, products).then(streams => {
-  const coordinators = streams.map(s => new Coordinator(s));
+  const coordinators = streams.map(s => new Coordinator(s, logger));
 });

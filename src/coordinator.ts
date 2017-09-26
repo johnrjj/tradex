@@ -10,6 +10,7 @@ import {
 import { Ticker } from 'gdax-trading-toolkit/build/src/exchanges/PublicExchangeAPI';
 import { Logger } from 'gdax-trading-toolkit/build/src/utils';
 import { OrderbookHistory, getNPreviousCandles } from './orderbook-history';
+import { RsiCalculator } from './algorithms/rsi';
 import { Candle } from './candle';
 import { Big, big, BigJS, Biglike, ONE, ZERO } from './types';
 
@@ -31,16 +32,21 @@ class Coordinator {
   readonly book: LiveOrderbook;
   readonly historyBook: OrderbookHistory;
   readonly feedRef: ExchangeFeed;
+  rsiCalculator: RsiCalculator;
 
-  constructor({ book, feed, historyBook }: FullFeed) {
+  constructor({ book, feed, historyBook }: FullFeed, logger?: Logger) {
     this.book = book;
     this.feedRef = feed;
     this.historyBook = historyBook;
+    this.rsiCalculator = new RsiCalculator(logger);
     this.historyBook.on('OrderbookHistory.update', (c: Candle) => {
-      const meta = this.candleMetadata.get(c);
-      const candles: Array<Candle> = getNPreviousCandles(c);
-      const foo = Big(candles[candles.length - 1] && candles[candles.length - 1].current);
-      console.log(foo);
+      logger.log('debug', 'candle update (not closed)')
+      this.rsiCalculator.calculate(c, false);
+    });
+    this.historyBook.on('OrderbookHistory.candleClose', (c: Candle) => {
+      logger.log('debug', 'candle closed')
+      const rsi = this.rsiCalculator.calculate(c, true);
+      logger.log('info', `${c.timestamp} RSI:\t${rsi}`);
     });
   }
 }

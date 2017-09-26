@@ -62,6 +62,7 @@ class OrderbookHistory extends Duplex {
         }
 
         closeCandle(candleToClose);
+        this.emit('OrderbookHistory.candleClose', candleToClose);
         this.logger.log('debug', `Closed current candle @ [${new Date(oldCurrentMinute)}]`);
         // now move the current minute up
         const newCurrentMinute = startOfMinute(t.time);
